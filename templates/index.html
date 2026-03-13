@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Intelligence Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0e1a;
+            color: #c9d1d9;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #00ff9c;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #3d5166;
+            font-size: 13px;
+            letter-spacing: 2px;
+        }
+
+        /* Search Box */
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px 20px;
+            background: #0d1117;
+            border: 1px solid #1a2332;
+            border-radius: 6px;
+            color: #e6edf3;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: #00ff9c;
+        }
+
+        .search-box button {
+            padding: 14px 28px;
+            background: #00ff9c;
+            border: none;
+            border-radius: 6px;
+            color: #0a0e1a;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: opacity 0.2s;
+        }
+
+        .search-box button:hover { opacity: 0.85; }
+
+        /* Error */
+        .error {
+            padding: 14px 20px;
+            background: rgba(255,75,75,0.1);
+            border: 1px solid rgba(255,75,75,0.3);
+            border-radius: 6px;
+            color: #ff4b4b;
+            margin-bottom: 24px;
+        }
+
+        /* Verdict Banner */
+        .verdict {
+            text-align: center;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 28px;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+        }
+
+        .verdict.malicious {
+            background: rgba(255,75,75,0.1);
+            border: 2px solid rgba(255,75,75,0.4);
+            color: #ff4b4b;
+        }
+
+        .verdict.suspicious {
+            background: rgba(251,191,36,0.1);
+            border: 2px solid rgba(251,191,36,0.4);
+            color: #fbbf24;
+        }
+
+        .verdict.clean {
+            background: rgba(0,255,156,0.1);
+            border: 2px solid rgba(0,255,156,0.4);
+            color: #00ff9c;
+        }
+
+        /* Summary Bar */
+        .summary {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .summary-card {
+            flex: 1;
+            padding: 16px;
+            background: #0d1117;
+            border: 1px solid #1a2332;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .summary-card .label {
+            font-size: 10px;
+            color: #3d5166;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00ff9c;
+        }
+
+        /* Feed Cards */
+        .feeds-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .feed-card {
+            background: #0d1117;
+            border: 1px solid #1a2332;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .feed-card .feed-name {
+            font-size: 11px;
+            color: #00ff9c;
+            letter-spacing: 3px;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+        }
+
+        .feed-card .feed-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #1a2332;
+            font-size: 12px;
+        }
+
+        .feed-card .feed-row:last-child {
+            border-bottom: none;
+        }
+
+        .feed-card .feed-row .key {
+            color: #3d5166;
+        }
+
+        .feed-card .feed-row .val {
+            color: #e6edf3;
+        }
+
+        .val.bad { color: #ff4b4b; }
+        .val.good { color: #00ff9c; }
+        .val.warn { color: #fbbf24; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: #3d5166;
+            font-size: 11px;
+            margin-top: 40px;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ Threat Intelligence Dashboard</h1>
+            <p>Real-time IOC correlation across AbuseIPDB · VirusTotal · GreyNoise</p>
+        </div>
+
+        <!-- Search -->
+        <form method="POST">
+            <div class="search-box">
+                <input
+                    type="text"
+                    name="ip_address"
+                    placeholder="Enter IP address to investigate... e.g. 185.220.101.1"
+                    value="{{ request.form.get('ip_address', '') }}"
+                    autofocus
+                />
+                <button type="submit">INVESTIGATE</button>
+            </div>
+        </form>
+
+        <!-- Error -->
+        {% if error %}
+        <div class="error">⚠ {{ error }}</div>
+        {% endif %}
+
+        <!-- Results -->
+        {% if results %}
+
+        <!-- Verdict -->
+        {% set verdict_lower = results.verdict | lower %}
+        {% if 'malicious' in verdict_lower %}
+            <div class="verdict malicious">{{ results.verdict }}</div>
+        {% elif 'suspicious' in verdict_lower %}
+            <div class="verdict suspicious">{{ results.verdict }}</div>
+        {% else %}
+            <div class="verdict clean">{{ results.verdict }}</div>
+        {% endif %}
+
+        <!-- Summary -->
+        <div class="summary">
+            <div class="summary-card">
+                <div class="label">IP ADDRESS</div>
+                <div class="value" style="font-size:15px;">{{ results.ip }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">THREAT SCORE</div>
+                <div class="value">{{ results.threat_score }} / 9</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">FEEDS QUERIED</div>
+                <div class="value">{{ results.feeds | length }}</div>
+            </div>
+        </div>
+
+        <!-- Feed Cards -->
+        <div class="feeds-grid">
+
+            {% if results.feeds.abuseipdb %}
+            <div class="feed-card">
+                <div class="feed-name">AbuseIPDB</div>
+                <div class="feed-row">
+                    <span class="key">Abuse Score</span>
+                    <span class="val {% if results.feeds.abuseipdb.abuse_score > 50 %}bad{% elif results.feeds.abuseipdb.abuse_score > 10 %}warn{% else %}good{% endif %}">
+                        {{ results.feeds.abuseipdb.abuse_score }}%
+                    </span>
+                </div>
+                <div class="feed-row">
+                    <span class="key">Total Reports</span>
+                    <span class="val">{{ results.feeds.abuseipdb.total_reports }}</span>
+                </div>
+                <div class="feed-row">
+                    <span class="key">Country</span>
+                    <span class="val">{{ results.feeds.abuseipdb.country }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if results.feeds.virustotal %}
+            <div class="feed-card">
+                <div class="feed-name">VirusTotal</div>
+                <div class="feed-row">
+                    <span class="key">Malicious Votes</span>
+                    <span class="val {% if results.feeds.virustotal.malicious_votes > 0 %}bad{% else %}good{% endif %}">
+                        {{ results.feeds.virustotal.malicious_votes }}
+                    </span>
+                </div>
+                <div class="feed-row">
+                    <span class="key">Suspicious Votes</span>
+                    <span class="val {% if results.feeds.virustotal.suspicious_votes > 0 %}warn{% else %}good{% endif %}">
+                        {{ results.feeds.virustotal.suspicious_votes }}
+                    </span>
+                </div>
+                <div class="feed-row">
+                    <span class="key">Harmless Votes</span>
+                    <span class="val good">{{ results.feeds.virustotal.harmless_votes }}</span>
+                </div>
+                <div class="feed-row">
+                    <span class="key">Country</span>
+                    <span class="val">{{ results.feeds.virustotal.country }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if results.feeds.greynoise %}
+            <div class="feed-card">
+                <div class="feed-name">GreyNoise</div>
+                <div class="feed-row">
+                    <span class="key">Classification</span>
+                    <span class="val {% if results.feeds.greynoise.classification == 'malicious' %}bad{% elif results.feeds.greynoise.classification == 'benign' %}good{% else %}warn{% endif %}">
+                        {{ results.feeds.greynoise.classification | upper }}
+                    </span>
+                </div>
+                <div class="feed-row">
+                    <span class="key">Internet Noise</span>
+                    <span class="val">{{ results.feeds.greynoise.noise }}</span>
+                </div>
+                <div class="feed-row">
+                    <span class="key">RIOT</span>
+                    <span class="val">{{ results.feeds.greynoise.riot }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            THREAT INTEL DASHBOARD · BUILT BY MANDEEP · OSCP · CEH
+        </div>
+
+    </div>
+</body>
+</html>
