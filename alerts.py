@@ -35,7 +35,10 @@ def load_existing_alerts():
         return []
 
     with open(ALERTS_FILE, "r") as f:
-        return json.load(f)
+        content = f.read().strip()
+        if not content:
+            return []
+        return json.loads(content)
 
 
 def run_watchlist_scan():
