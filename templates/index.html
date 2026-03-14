@@ -334,6 +334,53 @@
         </div>
         {% endif %}
 
+       <!-- Alerts Panel -->
+        {% if alerts %}
+        <div style="margin-top: 40px;">
+            <div style="font-size:11px; color:#3d5166; letter-spacing:3px; margin-bottom:14px;">
+                🚨 RECENT ALERTS
+            </div>
+
+            {% if scan_done %}
+            <div style="padding:12px 16px; background:rgba(0,255,156,0.05);
+                border:1px solid rgba(0,255,156,0.2); border-radius:6px;
+                color:#00ff9c; font-size:12px; margin-bottom:16px;">
+                ✅ Watchlist scan complete!
+            </div>
+            {% endif %}
+
+            {% for alert in alerts | reverse %}
+            <div style="padding:16px 20px; background:#0d1117;
+                border:1px solid {% if 'MALICIOUS' in alert.verdict %}rgba(255,75,75,0.4)
+                {% else %}rgba(251,191,36,0.4){% endif %};
+                border-radius:6px; margin-bottom:10px;
+                display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span style="color:#e6edf3; font-size:13px;">{{ alert.ip }}</span>
+                    <span style="margin-left:16px; font-size:11px;
+                        color:{% if 'MALICIOUS' in alert.verdict %}#ff4b4b
+                        {% else %}#fbbf24{% endif %};">
+                        {{ alert.verdict }}
+                    </span>
+                </div>
+                <div style="font-size:10px; color:#3d5166;">
+                    {{ alert.timestamp }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Watchlist Scan Button -->
+        <form method="POST" action="/scan" style="margin-top:20px; text-align:center;">
+            <button type="submit" style="padding:12px 32px;
+                background:transparent; border:1px solid #00ff9c;
+                color:#00ff9c; font-family:'Courier New', monospace;
+                font-size:12px; cursor:pointer; border-radius:6px;
+                letter-spacing:2px;">
+                🔍 RUN WATCHLIST SCAN
+            </button>
+        </form>
         <div class="footer">
             THREAT INTEL DASHBOARD · BUILT BY MANDEEP · OSCP · CEH
         </div>
