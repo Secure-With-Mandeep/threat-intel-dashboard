@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - ./reports:/app/reports
+      - ./watchlist.txt:/app/watchlist.txt
+    restart: unless-stopped
